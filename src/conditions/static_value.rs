@@ -45,7 +45,7 @@ mod test {
     #[test]
     fn print_default_static_config() {
         assert_eq!(
-            toml::to_string(&ConditionConfig::default_value_for("static").unwrap()).unwrap(),
+            toml::to_string(&ConditionConfig::example_value_for("static").unwrap()).unwrap(),
             r#"type = "static"
 value = false
 "#,
@@ -65,7 +65,7 @@ value = false
         assert_eq!(
             Ok(false),
             config_false
-                .condition
+                .component
                 .check(&Event::from("foo bar baz".to_owned()))
         );
 
@@ -80,7 +80,7 @@ value = false
         assert_eq!(
             Ok(true),
             config_true
-                .condition
+                .component
                 .check(&Event::from("foo bar baz".to_owned()))
         );
     }

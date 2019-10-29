@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use toml::Value;
 
+/// Combines a type field and a nested plugin config to create a table.
 #[derive(Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ConfigSwapOut {
@@ -57,6 +58,8 @@ impl<'de> Visitor<'de> for ConfigSwapOut {
     }
 }
 
+/// Stores both a constructed plugin instance and the ConfigSwapOut used to
+/// create it, this allows us to echo back the config of a component at runtime.
 pub struct ComponentConfig<T>
 where
     T: 'static + Sized,
@@ -65,7 +68,7 @@ where
 {
     swap_out: ConfigSwapOut,
 
-    pub condition: T,
+    pub component: T,
 }
 
 impl<T> ComponentConfig<T>
@@ -74,6 +77,7 @@ where
     inventory::iter<ComponentBuilder<T>>:
         std::iter::IntoIterator<Item = &'static ComponentBuilder<T>>,
 {
+    /// Returns a sorted Vec of all plugins registered of a type.
     pub fn types() -> Vec<String> {
         let mut types = Vec::new();
         for definition in inventory::iter::<ComponentBuilder<T>> {
@@ -83,12 +87,13 @@ where
         types
     }
 
-    pub fn default_value_for(type_str: &str) -> Result<Value, String> {
+    /// Returns an example config for a plugin component as a toml::Value.
+    pub fn example_value_for(type_str: &str) -> Result<Value, String> {
         match inventory::iter::<ComponentBuilder<T>>
             .into_iter()
             .find(|t| t.name.as_str() == type_str)
         {
-            Some(b) => match (b.default_value)() {
+            Some(b) => match (b.example_value)() {
                 Ok(d) => Value::try_from(&ConfigSwapOut {
                     type_str: type_str.to_owned(),
                     nested: d,
@@ -133,7 +138,7 @@ where
             Some(b) => match (b.from_value)(swap_out.nested.clone()) {
                 Ok(c) => Ok(Self {
                     swap_out: swap_out,
-                    condition: c,
+                    component: c,
                 }),
                 Err(e) => Err(Error::custom(format!(
                     "failed to parse type `{}`: {}",
@@ -148,25 +153,28 @@ where
     }
 }
 
+/// Constructs a plugin instance from a toml::Value of its configuration.
 type ComponentFromValue<T> = fn(Value) -> Result<T, String>;
-type ComponentDefaultValue = fn() -> Result<Value, String>;
+
+/// Returns a configuration example of a plugin as a toml::Value.
+type ComponentExampleValue = fn() -> Result<Value, String>;
 
 pub struct ComponentBuilder<T: Sized> {
     pub name: String,
     pub from_value: ComponentFromValue<T>,
-    pub default_value: ComponentDefaultValue,
+    pub example_value: ComponentExampleValue,
 }
 
 impl<T: Sized> ComponentBuilder<T> {
     pub fn new(
         name: String,
         from_value: ComponentFromValue<T>,
-        default_value: ComponentDefaultValue,
+        example_value: ComponentExampleValue,
     ) -> Self {
         ComponentBuilder {
             name: name,
             from_value: from_value,
-            default_value: default_value,
+            example_value: example_value,
         }
     }
 }
