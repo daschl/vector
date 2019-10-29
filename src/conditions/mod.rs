@@ -4,9 +4,9 @@ use inventory;
 
 pub mod static_value;
 
-type ConditionDefinition = ComponentBuilder<Box<dyn Condition>>;
+pub type ConditionDefinition = ComponentBuilder<Box<dyn Condition>>;
 
-type ConditionConfig = ComponentConfig<Box<dyn Condition>>;
+pub type ConditionConfig = ComponentConfig<Box<dyn Condition>>;
 
 pub trait Condition {
     fn check(&self, e: &Event) -> Result<bool, String>;
