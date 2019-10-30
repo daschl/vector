@@ -33,10 +33,10 @@ where
         std::iter::IntoIterator<Item = &'static ComponentBuilder<T>>,
 {
     /// Returns a sorted Vec of all plugins registered of a type.
-    pub fn types() -> Vec<String> {
+    pub fn types() -> Vec<&'static str> {
         let mut types = Vec::new();
         for definition in inventory::iter::<ComponentBuilder<T>> {
-            types.push(definition.name.clone());
+            types.push(definition.name);
         }
         types.sort();
         types
@@ -90,22 +90,21 @@ where
     }
 }
 
-/// Constructs a plugin instance from a toml::Value of its configuration.
-type ComponentFromValue<T> = fn(Value) -> Result<T, String>;
-
 pub struct ComponentBuilder<T: Sized> {
-    pub name: String,
-    pub from_value: ComponentFromValue<T>,
+    pub name: &'static str,
+    from_value: fn(Value) -> Result<T, String>,
 }
 
 impl<T: Sized> ComponentBuilder<T> {
-    pub fn new(
-        name: String,
-        from_value: ComponentFromValue<T>,
-    ) -> Self {
+    pub fn new<'de, B: Deserialize<'de> + Into<T>>(name: &'static str) -> Self {
         ComponentBuilder {
             name: name,
-            from_value: from_value,
+            from_value: |value| {
+                value
+                    .try_into::<B>()
+                    .map(|c| c.into())
+                    .map_err(|e| format!("{}", e))
+            },
         }
     }
 }

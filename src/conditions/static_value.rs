@@ -11,27 +11,20 @@ pub struct StaticConfig {
     pub value: bool,
 }
 
-pub struct Static {
-    conf: StaticConfig,
-}
-
-impl Static {
-    pub fn new(conf: StaticConfig) -> Box<dyn Condition> {
-        Box::new(Self { conf: conf })
+impl Into<Box<dyn Condition>> for StaticConfig {
+    fn into(self) -> Box<dyn Condition> {
+        Box::new(self)
     }
 }
 
-impl Condition for Static {
+impl Condition for StaticConfig {
     fn check(&self, _: &Event) -> Result<bool, String> {
-        return Ok(self.conf.value);
+        return Ok(self.value);
     }
 }
 
 inventory::submit! {
-    ConditionDefinition::new(
-        "static".to_owned(),
-        | value | value.try_into().map(|c| Static::new(c)).map_err(|e| format!("{}", e)),
-    )
+    ConditionDefinition::new::<StaticConfig>("static")
 }
 
 #[cfg(test)]
