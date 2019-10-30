@@ -51,7 +51,7 @@ mod test {
             .err()
             .map(|e| format!("{}", e))
             .unwrap_or("".to_owned()),
-            "missing type field".to_owned(),
+            "missing field `type`".to_owned(),
         );
     }
 
