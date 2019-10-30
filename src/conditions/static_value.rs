@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use toml::Value;
 
 use crate::{
     conditions::{Condition, ConditionDefinition},
@@ -32,25 +31,12 @@ inventory::submit! {
     ConditionDefinition::new(
         "static".to_owned(),
         | value | value.try_into().map(|c| Static::new(c)).map_err(|e| format!("{}", e)),
-        || Value::try_from(StaticConfig{
-            value: false,
-        }).map_err(|e| format!("{}", e))
     )
 }
 
 #[cfg(test)]
 mod test {
     use crate::{conditions::ConditionConfig, Event};
-
-    #[test]
-    fn print_default_static_config() {
-        assert_eq!(
-            toml::to_string(&ConditionConfig::example_value_for("static").unwrap()).unwrap(),
-            r#"type = "static"
-value = false
-"#,
-        );
-    }
 
     #[test]
     fn parse_static_config() {
